@@ -4,9 +4,9 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/asoorm/todo-grpc/pkg/log"
-
+	"github.com/asoorm/todo-grpc/cmd/client"
 	"github.com/asoorm/todo-grpc/cmd/server"
+	"github.com/asoorm/todo-grpc/pkg/log"
 )
 
 var (
@@ -23,9 +23,9 @@ func Run() {
 	case "server":
 		log.Info("starting grpc server")
 		server.Run(*port)
-	//case "client":
-	//	log.Info("starting grpc client")
-	//	client.Run(*port)
+	case "client":
+		log.Info("starting grpc client")
+		client.Run(*port)
 	//case "rest":
 	//	log.Info("starting rest proxy")
 	//	rest_proxy.Run(*port)
