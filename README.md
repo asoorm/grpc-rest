@@ -100,6 +100,14 @@ Response trailers received:
 content-type: application/grpc
 ```
 
+Unknown path
+
+```shell script
+curl http://localhost:9001/PingPongService/Pong -d '{"api_version": "v1", "message": "hello ahmet"}'
+
+404 page not found
+```
+
 Valid
 ```shell script
 curl http://localhost:9001/PingPongService/Ping -d '{"api_version": "v1", "message": "hello ahmet"}'
