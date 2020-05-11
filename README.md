@@ -13,3 +13,10 @@ e is 65537 (0x10001)
 ```
 
 This creates `server.crt` and `server.key` in the `./certs` directory.
+
+
+## Notes:
+
+Log of notes, & reading material & resources for this project
+
+[Scrapbook](/SCRAPBOOK.md)
