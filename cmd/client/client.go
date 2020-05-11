@@ -11,9 +11,8 @@ import (
 	"google.golang.org/grpc"
 )
 
-func Run(port int) {
-
-	serverAddress := fmt.Sprintf("localhost:%d", port)
+func Run(grpcServicePort int) {
+	serverAddress := fmt.Sprintf("localhost:%d", grpcServicePort)
 	log.Info("connecting to grpc server %s...", serverAddress)
 	conn, err := grpc.Dial(serverAddress,
 		grpc.WithInsecure(),

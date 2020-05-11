@@ -17,8 +17,7 @@ import (
 	"google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
 )
 
-func Run(grpcServicePort int) {
-
+func Run(listenPort, grpcServicePort int) {
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: true,
 	}
@@ -26,7 +25,7 @@ func Run(grpcServicePort int) {
 	conn, err := grpc.Dial(
 		fmt.Sprintf("localhost:%d", grpcServicePort),
 		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
-		//grpc.WithBlock(),
+		grpc.WithBlock(),
 	)
 	log.FatalOnError(err)
 	defer conn.Close()
@@ -66,8 +65,9 @@ func Run(grpcServicePort int) {
 		log.Info("serviceDescriptor %s", serviceDescriptor.String())
 	}
 
-	log.Info("starting rest server on %d", 9001)
-	log.FatalOnError(http.ListenAndServe(":9001", mainRouter))
+	listenAddress := fmt.Sprintf(":%d", listenPort)
+	log.Info("starting rest server on %s", listenAddress)
+	log.FatalOnError(http.ListenAndServe(listenAddress, mainRouter))
 }
 
 func requestHandler(refClient *grpcreflect.Client, cc *grpc.ClientConn, method string) http.HandlerFunc {
@@ -100,12 +100,6 @@ func requestHandler(refClient *grpcreflect.Client, cc *grpc.ClientConn, method s
 		// Need to format output for REST-based calls, but this is ok for PoC
 		handler := grpcurl.NewDefaultEventHandler(w, descriptorSource, formatter, verbose)
 
-		err = grpcurl.InvokeRPC(context.Background(), descriptorSource, cc, method, []string{}, handler, rf.Next)
-		if err != nil {
-			log.Error("unable to invoke RPC for method %s: %s", method, err.Error())
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(http.StatusText(http.StatusInternalServerError)))
-			return
-		}
+		_ = grpcurl.InvokeRPC(context.Background(), descriptorSource, cc, method, []string{}, handler, rf.Next)
 	}
 }

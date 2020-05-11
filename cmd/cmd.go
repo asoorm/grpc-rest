@@ -11,8 +11,9 @@ import (
 )
 
 var (
-	mode = flag.String("mode", "server", "start as client or server {client,server,rest}[default:server]")
-	port = flag.Int("port", 9000, "grpc server port [default:9000]")
+	mode     = flag.String("mode", "server", "start as client or server {client,server,rest}[default:server]")
+	port     = flag.Int("port", 9000, "gRPC server port [default:9000]")
+	restPort = flag.Int("rest_port", 9001, "REST API port [default:9001], only valid with {mode:rest}")
 )
 
 func Run() {
@@ -27,8 +28,8 @@ func Run() {
 		client.Run(*port)
 	case "rest":
 		log.Info("starting rest proxy")
-		rest_proxy.Run(*port)
+		rest_proxy.Run(*restPort, *port)
 	default:
-		log.FatalOnError(fmt.Errorf("unsupported mode, expected {client,server}, got %s", *mode))
+		log.FatalOnError(fmt.Errorf("unsupported mode, expected {client,server,rest}, got %s", *mode))
 	}
 }
