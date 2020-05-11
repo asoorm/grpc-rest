@@ -1,0 +1,18 @@
+syntax = "proto3";
+package v1;
+
+option go_package = "/v1/ping_pong";
+
+message PingMessage {
+    string api_version = 1;
+    string message = 2;
+}
+
+message PongMessage {
+    string api_version = 1;
+    string message = 2;
+}
+
+service PingPongService {
+    rpc Ping(PingMessage) returns (PongMessage) {};
+}
