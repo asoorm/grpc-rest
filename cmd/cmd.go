@@ -11,13 +11,11 @@ import (
 )
 
 var (
-	mode *string
-	port *int
+	mode = flag.String("mode", "server", "start as client or server {client,server,rest}[default:server]")
+	port = flag.Int("port", 9000, "grpc server port [default:9000]")
 )
 
 func Run() {
-	mode = flag.String("mode", "server", "start as client or server {client,server,rest}[default:server]")
-	port = flag.Int("port", 9000, "grpc server port [default:9000]")
 	flag.Parse()
 
 	switch *mode {
