@@ -1,4 +1,4 @@
-# REST proxy fascade for gRPC services
+# REST proxy facade for gRPC services
 
 ## Installation
 
