@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/asoorm/todo-grpc/cmd/client"
+	"github.com/asoorm/todo-grpc/cmd/rest_proxy"
 	"github.com/asoorm/todo-grpc/cmd/server"
 	"github.com/asoorm/todo-grpc/pkg/log"
 )
@@ -26,9 +27,9 @@ func Run() {
 	case "client":
 		log.Info("starting grpc client")
 		client.Run(*port)
-	//case "rest":
-	//	log.Info("starting rest proxy")
-	//	rest_proxy.Run(*port)
+	case "rest":
+		log.Info("starting rest proxy")
+		rest_proxy.Run(*port)
 	default:
 		log.FatalOnError(fmt.Errorf("unsupported mode, expected {client,server}, got %s", *mode))
 	}
