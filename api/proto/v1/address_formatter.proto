@@ -1,0 +1,26 @@
+syntax = "proto3";
+package v1;
+
+option go_package = "/v1/address_formatter";
+
+message Address {
+    string street_address = 1;
+    string city = 2;
+    string state = 3;
+}
+
+message AddressRequest {
+    string api_version = 1;
+    Address billing_address = 2;
+    Address shipping_address = 3;
+}
+
+message AddressResponse {
+    string api_version = 1;
+    string billing_address = 2;
+    string shipping_address = 3;
+}
+
+service AddressFormatterService {
+    rpc Format (AddressRequest) returns (AddressResponse) {};
+}

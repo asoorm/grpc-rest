@@ -6,17 +6,17 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
-
-	"github.com/jhump/protoreflect/desc"
-
-	"github.com/jhump/protoreflect/desc/protoprint"
+	"os"
 
 	"github.com/asoorm/oas3"
 	"github.com/asoorm/todo-grpc/pkg/log"
 	"github.com/fullstorydev/grpcurl"
 	"github.com/go-chi/chi"
+	"github.com/jhump/protoreflect/desc"
+	"github.com/jhump/protoreflect/desc/protoprint"
 	"github.com/jhump/protoreflect/grpcreflect"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -63,7 +63,7 @@ func Run(listenPort, grpcServicePort int) {
 			continue
 		}
 
-		printServiceDescriptor(serviceDescriptor)
+		//printServiceDescriptor(serviceDescriptor)
 
 		serviceRouter := chi.NewMux()
 
@@ -71,7 +71,7 @@ func Run(listenPort, grpcServicePort int) {
 
 		for _, methodDescriptor := range serviceDescriptor.GetMethods() {
 
-			printMethodDescriptor(methodDescriptor)
+			//printMethodDescriptor(methodDescriptor)
 
 			listenPath := fmt.Sprintf("/%s", methodDescriptor.GetName())
 
@@ -82,14 +82,16 @@ func Run(listenPort, grpcServicePort int) {
 				Summary:     "This gets lost in translation",
 				Responses:   nil,
 			})
+
+			log.Info("****************** listening on: %s: %s", listenPath, methodDescriptor.GetFullyQualifiedName())
 			serviceRouter.Handle(listenPath, requestHandler(reflectionClient, conn, methodDescriptor.GetFullyQualifiedName()))
 		}
 
-		fileDescriptor := serviceDescriptor.GetFile()
-		printFileDescriptor(fileDescriptor)
-
-		messageDescriptors := fileDescriptor.GetMessageTypes()
-		printMessageDescriptors(messageDescriptors)
+		//fileDescriptor := serviceDescriptor.GetFile()
+		//printFileDescriptor(fileDescriptor)
+		//
+		//messageDescriptors := fileDescriptor.GetMessageTypes()
+		//printMessageDescriptors(messageDescriptors)
 
 		mainRouter.Mount(servicePath, serviceRouter)
 	}
@@ -135,6 +137,8 @@ func requestHandler(refClient *grpcreflect.Client, cc *grpc.ClientConn, method s
 
 		defer r.Body.Close()
 
+		log.Info("body: %s", string(bodyBytes))
+
 		format := "json"
 		includeSeparators := true
 		emitDefaults := false
@@ -156,9 +160,12 @@ func requestHandler(refClient *grpcreflect.Client, cc *grpc.ClientConn, method s
 
 		// Shouldn't write directly to http.ResponseWriter
 		// Need to format output for REST-based calls, but this is ok for PoC
-		handler := grpcurl.NewDefaultEventHandler(w, descriptorSource, formatter, verbose)
+		handler := grpcurl.NewDefaultEventHandler(io.MultiWriter(os.Stdout, w), descriptorSource, formatter, verbose)
 
-		_ = grpcurl.InvokeRPC(context.Background(), descriptorSource, cc, method, []string{}, handler, requestFormatter.Next)
+		err = grpcurl.InvokeRPC(context.Background(), descriptorSource, cc, method, []string{}, handler, requestFormatter.Next)
+		if err != nil {
+			log.Error("unable to invoke RPC: %#v", err)
+		}
 	}
 }
 
