@@ -4,10 +4,16 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 
+	"github.com/jhump/protoreflect/desc"
+
+	"github.com/jhump/protoreflect/desc/protoprint"
+
+	"github.com/asoorm/oas3"
 	"github.com/asoorm/todo-grpc/pkg/log"
 	"github.com/fullstorydev/grpcurl"
 	"github.com/go-chi/chi"
@@ -16,6 +22,11 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
 )
+
+type Property struct {
+	Id   string `json:"id"`
+	Type string `json:"type"`
+}
 
 func Run(listenPort, grpcServicePort int) {
 	tlsConfig := &tls.Config{
@@ -36,43 +47,90 @@ func Run(listenPort, grpcServicePort int) {
 	)
 
 	services, err := reflectionClient.ListServices()
-	log.Info("reflected services: %#v", services)
+
+	docs := &oas3.Oas3{}
 
 	mainRouter := chi.NewMux()
 	for i, svc := range services {
+		// assumption that 1st service is the reflection service - Investigate further
+		if i == 0 {
+			continue
+		}
+
 		serviceDescriptor, err := reflectionClient.ResolveService(svc)
 		if err != nil {
 			log.Error("service resolution error %s", err.Error())
 			continue
 		}
 
-		log.Info("service %d: %s", i, serviceDescriptor.GetName())
+		printServiceDescriptor(serviceDescriptor)
 
 		serviceRouter := chi.NewMux()
 
 		servicePath := fmt.Sprintf("/%s", serviceDescriptor.GetName())
-		log.Info("%s", servicePath)
 
 		for _, methodDescriptor := range serviceDescriptor.GetMethods() {
-			listenPath := fmt.Sprintf("/%s", methodDescriptor.GetName())
-			log.Info("\t%s%s", servicePath, listenPath)
 
+			printMethodDescriptor(methodDescriptor)
+
+			listenPath := fmt.Sprintf("/%s", methodDescriptor.GetName())
+
+			docs.Add(servicePath+listenPath, http.MethodPost, &oas3.Operation{
+				OperationId: listenPath,
+				Description: "This gets lost in translation",
+				Parameters:  nil,
+				Summary:     "This gets lost in translation",
+				Responses:   nil,
+			})
 			serviceRouter.Handle(listenPath, requestHandler(reflectionClient, conn, methodDescriptor.GetFullyQualifiedName()))
 		}
 
-		mainRouter.Mount(servicePath, serviceRouter)
+		fileDescriptor := serviceDescriptor.GetFile()
+		printFileDescriptor(fileDescriptor)
 
-		log.Info("serviceDescriptor %s", serviceDescriptor.String())
+		messageDescriptors := fileDescriptor.GetMessageTypes()
+		printMessageDescriptors(messageDescriptors)
+
+		mainRouter.Mount(servicePath, serviceRouter)
 	}
+
+	mainRouter.Handle("/swagger.json", documentationHandler(docs))
 
 	listenAddress := fmt.Sprintf(":%d", listenPort)
 	log.Info("starting rest server on %s", listenAddress)
 	log.FatalOnError(http.ListenAndServe(listenAddress, mainRouter))
 }
 
+func documentationHandler(docs *oas3.Oas3) http.Handler {
+
+	docs.Openapi = "3.0.0"
+	docs.Info = oas3.Info{
+		// Don't know if tyk cares about this stuff???
+		//Title:          "",
+		//Version:        "",
+		//Description:    "",
+		//TermsOfService: "",
+		//Contact: struct {
+		//	Name  string `json:"name"`
+		//	Email string `json:"email"`
+		//	URL   string `json:"url"`
+		//}{},
+		//License: struct {
+		//	Name string `json:"name"`
+		//	URL  string `json:"url"`
+		//}{},
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("content-type", "application/json")
+		w.Header().Set("access-control-allow-origin", "*")
+		data, _ := json.Marshal(docs)
+		w.Write(data)
+	})
+}
+
 func requestHandler(refClient *grpcreflect.Client, cc *grpc.ClientConn, method string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		bodyBytes, _ := ioutil.ReadAll(r.Body)
 
 		defer r.Body.Close()
@@ -82,7 +140,7 @@ func requestHandler(refClient *grpcreflect.Client, cc *grpc.ClientConn, method s
 		emitDefaults := false
 		verbose := true
 		descriptorSource := grpcurl.DescriptorSourceFromServer(context.Background(), refClient)
-		rf, formatter, err := grpcurl.RequestParserAndFormatterFor(
+		requestFormatter, formatter, err := grpcurl.RequestParserAndFormatterFor(
 			grpcurl.Format(format),
 			descriptorSource,
 			emitDefaults,
@@ -100,6 +158,41 @@ func requestHandler(refClient *grpcreflect.Client, cc *grpc.ClientConn, method s
 		// Need to format output for REST-based calls, but this is ok for PoC
 		handler := grpcurl.NewDefaultEventHandler(w, descriptorSource, formatter, verbose)
 
-		_ = grpcurl.InvokeRPC(context.Background(), descriptorSource, cc, method, []string{}, handler, rf.Next)
+		_ = grpcurl.InvokeRPC(context.Background(), descriptorSource, cc, method, []string{}, handler, requestFormatter.Next)
 	}
+}
+
+func printFileDescriptor(fileDescriptor *desc.FileDescriptor) {
+	log.Info("********** fileDescriptor: ***********")
+	printer := protoprint.Printer{}
+	fd, _ := printer.PrintProtoToString(fileDescriptor)
+	log.Info("proto: %s", fd)
+}
+
+func printMessageDescriptors(messageDescriptors []*desc.MessageDescriptor) {
+	log.Info("********** messageDescriptors: ***********")
+	printer := protoprint.Printer{}
+	for i, md := range messageDescriptors {
+		log.Info("  [%d]: %s", i, md.GetName())
+		log.Info("  [%d]: String: %s", i, md.String())
+		log.Info("  [%d]: GetFullyQualifiedName: %s", i, md.GetFullyQualifiedName())
+		fd, _ := printer.PrintProtoToString(md)
+		log.Info("  [%d]: proto: %s", i, fd)
+	}
+}
+
+func printServiceDescriptor(serviceDescriptor *desc.ServiceDescriptor) {
+	log.Info("********** serviceDescriptor: ***********")
+	printer := protoprint.Printer{}
+	proto, err := printer.PrintProtoToString(serviceDescriptor)
+	log.FatalOnError(err)
+	log.Info("proto: %s", proto)
+}
+
+func printMethodDescriptor(methodDescriptor *desc.MethodDescriptor) {
+	log.Info("********** methodDescriptor: ***********")
+	printer := protoprint.Printer{}
+	proto, err := printer.PrintProtoToString(methodDescriptor)
+	log.FatalOnError(err)
+	log.Info("proto: %s", proto)
 }

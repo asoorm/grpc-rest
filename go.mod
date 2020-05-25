@@ -3,6 +3,7 @@ module github.com/asoorm/todo-grpc
 go 1.14
 
 require (
+	github.com/asoorm/oas3 v0.0.0-20200520114333-424bee54c689
 	github.com/fullstorydev/grpcurl v1.5.1
 	github.com/go-chi/chi v4.1.1+incompatible
 	github.com/golang/protobuf v1.4.1
