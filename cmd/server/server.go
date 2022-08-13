@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/asoorm/todo-grpc/pkg/log"
-	"github.com/asoorm/todo-grpc/pkg/model/v1/address_formatter"
 	"github.com/asoorm/todo-grpc/pkg/model/v1/ping_pong"
 	pb "github.com/asoorm/todo-grpc/pkg/service/v1"
 	"google.golang.org/grpc"
@@ -30,10 +29,10 @@ func Run(port int) {
 	log.FatalOnError(err)
 
 	pingPongService := pb.NewPingPongService()
-	addressFormatterService := pb.NewAddressFormatterService()
+	//addressFormatterService := pb.NewAddressFormatterService()
 	grpcServer := grpc.NewServer(grpc.Creds(creds))
 	ping_pong.RegisterPingPongServiceServer(grpcServer, pingPongService)
-	address_formatter.RegisterAddressFormatterServiceServer(grpcServer, addressFormatterService)
+	//address_formatter.RegisterAddressFormatterServiceServer(grpcServer, addressFormatterService)
 	reflection.Register(grpcServer)
 
 	log.Info("listening on %d", port)
