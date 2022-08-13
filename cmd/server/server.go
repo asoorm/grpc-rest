@@ -2,7 +2,6 @@ package server
 
 import (
 	"flag"
-	"fmt"
 	"net"
 	"os"
 
@@ -14,9 +13,9 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-func Run(port int) {
+func Run(addr string) {
 	flag.Parse()
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	lis, err := net.Listen("tcp", addr)
 	log.FatalOnError(err)
 
 	workingDir, _ := os.Getwd()
@@ -35,6 +34,6 @@ func Run(port int) {
 	//address_formatter.RegisterAddressFormatterServiceServer(grpcServer, addressFormatterService)
 	reflection.Register(grpcServer)
 
-	log.Info("listening on %d", port)
+	log.Info("listening on %s", addr)
 	log.FatalOnError(grpcServer.Serve(lis))
 }

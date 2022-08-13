@@ -12,10 +12,9 @@ import (
 	"google.golang.org/grpc"
 )
 
-func Run(grpcServicePort int) {
-	serverAddress := fmt.Sprintf("localhost:%d", grpcServicePort)
-	log.Info("connecting to grpc server %s...", serverAddress)
-	conn, err := grpc.Dial(serverAddress,
+func Run(addr string) {
+	log.Info("connecting to grpc server %s...", addr)
+	conn, err := grpc.Dial(addr,
 		//grpc.WithInsecure(),
 		grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})),
 		grpc.WithBlock(),

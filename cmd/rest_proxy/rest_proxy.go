@@ -28,13 +28,13 @@ type Property struct {
 	Type string `json:"type"`
 }
 
-func Run(listenPort, grpcServicePort int) {
+func Run(listenPort int, grpcServiceAddr string) {
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: true,
 	}
 
 	conn, err := grpc.Dial(
-		fmt.Sprintf("localhost:%d", grpcServicePort),
+		grpcServiceAddr,
 		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
 		grpc.WithBlock(),
 	)

@@ -23,18 +23,18 @@ go run main.go
 INFO: starting grpc server
 INFO: os.Getwd(): /Users/ahmet/go/src/github.com/asoorm/grpc-rest
 INFO: os.Executable(): /var/folders/73/x7scyhbx0cj5llzdc9k99jzr0000gn/T/go-build816017477/b001/exe/main
-INFO: listening on 9000
+INFO: listening on localhost:9000
 ```
 
 You can also be explicit to start the server & override the listen port
 
 ```shell script
-go run main.go -mode server -port 9191
+go run main.go -mode server -addr localhost:9999
 
 INFO: starting grpc server
 INFO: os.Getwd(): /Users/ahmet/go/src/github.com/asoorm/grpc-rest
 INFO: os.Executable(): /var/folders/73/x7scyhbx0cj5llzdc9k99jzr0000gn/T/go-build094596563/b001/exe/main
-INFO: listening on 9191
+INFO: listening on localhost:9999
 ```
 
 If you wish to enable transport logging verbosity for debug purposes
@@ -44,7 +44,7 @@ GRPC_GO_LOG_VERBOSITY_LEVEL=99 GRPC_GO_LOG_SEVERITY_LEVEL=info go run main.go
 INFO: starting grpc server
 INFO: os.Getwd(): /Users/ahmet/go/src/github.com/asoorm/grpc-rest
 INFO: os.Executable(): /var/folders/73/x7scyhbx0cj5llzdc9k99jzr0000gn/T/go-build444463768/b001/exe/main
-INFO: listening on 9000
+INFO: listening on localhost:9000
 WARNING: 2020/05/11 07:42:17 grpc: Server.Serve failed to complete security handshake from "[::1]:55158": tls: first record does not look like a TLS handshake
 WARNING: 2020/05/11 07:42:18 grpc: Server.Serve failed to complete security handshake from "[::1]:55170": tls: first record does not look like a TLS handshake
 WARNING: 2020/05/11 07:42:20 grpc: Server.Serve failed to complete security handshake from "[::1]:55171": tls: first record does not look like a TLS handshake
